@@ -2,7 +2,6 @@ import streamlit as st
 import requests
 import xml.etree.ElementTree as ET
 import numpy as np
-import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 
 
@@ -92,7 +91,6 @@ def criar_grafico(nomes, resultados, margens, titulo):
     # Ajustar layout
     fig.update_layout(
         title=titulo,
-        xaxis_title="Categorias",
         yaxis_title="Resultado (mil R$)",
         yaxis=dict(title="Resultado (mil R$)", side="left"),
         yaxis2=dict(
@@ -157,10 +155,6 @@ def analise_margens(tipo, mes, ano):
             obter_valor_conta(cdata_root, conta["custo"]) for conta in contas[3:]
         )
 
-        contas_setorial = [
-            {"nome": "Vendas", "receita": vendas_receita, "custo": vendas_custo},
-            {"nome": "Pós-Vendas", "receita": pos_vendas_receita, "custo": pos_vendas_custo},
-        ]
         titulo = f"Resultados e Margens Brutas por Setor - {mes:02d}/{ano}"
         nomes = ["Vendas", "Pós-Vendas"]
         resultados = [(-vendas_receita - vendas_custo)/1000, (-pos_vendas_receita - pos_vendas_custo)/1000] # em milhares de reais
@@ -169,6 +163,89 @@ def analise_margens(tipo, mes, ano):
 
     grafico = criar_grafico(nomes, resultados, margens, titulo)
     return grafico
+
+def analise_margens_ano(ano):
+    margens_ano = []
+    resultados_ano = []
+    for i in range(1,13):
+        cdata_root = realizar_requisicao_soap(i, ano)
+        if cdata_root is None:
+            return
+
+        contas = [
+            {"nome": "VN Passageiros", "receita": "3.1.1.001.000001", "custo": "3.3.1.001.000001"},
+            {"nome": "VN Comerciais Leves", "receita": "3.1.1.001.000002", "custo": "3.3.1.001.000002"},
+            {"nome": "Seminovos", "receita": "3.1.1.002.000001", "custo": "3.3.1.002.000001"},
+            {"nome": "Peças Atacado", "receita": "3.1.1.003.000001", "custo": "3.3.1.003.000001"},
+            {"nome": "Peças Varejo", "receita": "3.1.1.003.000002", "custo": "3.3.1.003.000002"},
+            {"nome": "Peças Mecânica", "receita": "3.1.1.003.000003", "custo": "3.3.1.003.000003"},
+            {"nome": "Peças Funilaria e Pintura", "receita": "3.1.1.003.000004", "custo": "3.3.1.003.000004"},
+            {"nome": "Peças Garantia", "receita": "3.1.1.003.000005", "custo": "3.3.1.003.000005"},
+            {"nome": "Peças Interna", "receita": "3.1.1.003.000006", "custo": "3.3.1.003.000006"},
+            {"nome": "Acessórios", "receita": "3.1.1.003.000007", "custo": "3.3.1.003.000007"},
+            {"nome": "Combustíveis e Lubrificantes", "receita": "3.1.1.003.000008", "custo": "3.3.1.003.000008"},
+            {"nome": "Pneus e Câmaras", "receita": "3.1.1.003.000009", "custo": "3.3.1.003.000009"},
+        ]
+
+        # Consolidar os subsetores para os setores "Vendas" e "Pós-Vendas"
+        vendas_receita = sum(
+            obter_valor_conta(cdata_root, conta["receita"]) for conta in contas[:3]
+        )
+        vendas_custo = sum(
+            obter_valor_conta(cdata_root, conta["custo"]) for conta in contas[:3]
+        )
+
+        pos_vendas_receita = sum(
+            obter_valor_conta(cdata_root, conta["receita"]) for conta in contas[3:]
+        )
+        pos_vendas_custo = sum(
+            obter_valor_conta(cdata_root, conta["custo"]) for conta in contas[3:]
+        )
+
+        titulo = f"Resultados e Margens Brutas por Setor - {ano}"
+        meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]
+        resultados_ano.append([(-vendas_receita - vendas_custo)/1000, (-pos_vendas_receita - pos_vendas_custo)/1000]) # em milhares de reais
+        margens_ano.append([(vendas_receita + vendas_custo)/vendas_receita * 100 if vendas_receita != 0 else 0,
+                (pos_vendas_receita + pos_vendas_custo)/pos_vendas_receita * 100 if pos_vendas_receita != 0 else 0])
+        
+        grafico = criar_grafico_anual(meses, resultados_ano, margens_ano, titulo)
+    return grafico
+    
+def criar_grafico_anual(meses, resultados, margens, titulo):
+    fig = go.Figure()
+
+    # Adicionar barras de resultados
+    fig.add_trace(
+        go.Bar(
+            x=meses,
+            y=[resultado[0] for resultado in resultados],
+            name="Vendas - Resultado",
+            marker_color="DarkSlateBlue",
+            hovertemplate="<b>%{x}</b><br>Resultado: %{y:.2f} mil R$<extra></extra>"
+        )
+    )
+
+    fig.add_trace(
+        go.Bar(
+            x=meses,
+            y=[resultado[1] for resultado in resultados],
+            name="Pós-Vendas - Resultado",
+            marker_color="RoyalBlue",
+            hovertemplate="<b>%{x}</b><br>Resultado: %{y:.2f} mil R$<extra></extra>"
+        )
+    )
+
+    # Ajustar layout
+    fig.update_layout(
+        barmode='group',  # Define agrupamento das barras
+        title=f"Resultados e Margens Mensais por Setor - {ano}",
+        xaxis_title="Meses",
+        yaxis_title="Valores",
+        legend_title="Indicadores",
+        xaxis=dict(tickmode='linear')  # Garante que todos os meses sejam exibidos
+    )
+
+    return fig
 
 
 # Configuração inicial do Streamlit
@@ -189,8 +266,10 @@ with col_param:
     if st.button("Analisar"):
         grafico_setorial = analise_margens(tipo="Análise Setorial", mes=mes, ano=ano)
         grafico_subsetorial = analise_margens(tipo="Análise Subsetorial", mes=mes, ano=ano)
+        grafico_anual = analise_margens_ano(ano=ano)
         col_graficos_esq.plotly_chart(grafico_setorial, use_container_width=True)
         col_graficos_dir.plotly_chart(grafico_subsetorial, use_container_width=True)
+        col_graficos.plotly_chart(grafico_anual, use_container_width=True)
 
 # Recuperar parâmetros selecionados
 #ano = st.session_state.get('ano', 2024)
