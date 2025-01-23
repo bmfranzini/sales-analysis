@@ -26,7 +26,7 @@ def realizar_requisicao_soap(mes, ano):
         <deal:WS_DealernetGateway.CONSULTASALDOCONTABIL>
             <deal:Usuario_identificador>portus</deal:Usuario_identificador>
             <deal:Usuariosenha_senha>Portus25@</deal:Usuariosenha_senha>
-            <deal:Empresa_codigo>1</deal:Empresa_codigo>
+            <deal:Empresa_codigo>2</deal:Empresa_codigo>
             <deal:Dtini>{ano}-{mes:02d}-01</deal:Dtini>
             <deal:Dtfin>{ano}-{mes:02d}-{ultimo_dia}</deal:Dtfin>
         </deal:WS_DealernetGateway.CONSULTASALDOCONTABIL>
