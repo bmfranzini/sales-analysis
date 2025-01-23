@@ -26,7 +26,7 @@ def realizar_requisicao_soap(mes, ano):
         <deal:WS_DealernetGateway.CONSULTASALDOCONTABIL>
             <deal:Usuario_identificador>portus</deal:Usuario_identificador>
             <deal:Usuariosenha_senha>Portus25@</deal:Usuariosenha_senha>
-            <deal:Empresa_codigo>3</deal:Empresa_codigo>
+            <deal:Empresa_codigo>1</deal:Empresa_codigo>
             <deal:Dtini>{ano}-{mes:02d}-01</deal:Dtini>
             <deal:Dtfin>{ano}-{mes:02d}-{ultimo_dia}</deal:Dtfin>
         </deal:WS_DealernetGateway.CONSULTASALDOCONTABIL>
@@ -266,10 +266,10 @@ with col_param:
     if st.button("Analisar"):
         grafico_setorial = analise_margens(tipo="Análise Setorial", mes=mes, ano=ano)
         grafico_subsetorial = analise_margens(tipo="Análise Subsetorial", mes=mes, ano=ano)
-        #grafico_anual = analise_margens_ano(ano=ano)
+        grafico_anual = analise_margens_ano(ano=ano)
         col_graficos_esq.plotly_chart(grafico_setorial, use_container_width=True)
         col_graficos_dir.plotly_chart(grafico_subsetorial, use_container_width=True)
-        #col_graficos.plotly_chart(grafico_anual, use_container_width=True)
+        col_graficos.plotly_chart(grafico_anual, use_container_width=True)
 
 # Recuperar parâmetros selecionados
 #ano = st.session_state.get('ano', 2024)
